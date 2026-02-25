@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Handball Stats</title>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;700&family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f0f2f5;
+  --surface: #ffffff;
+  --surface2: #f7f8fa;
+  --border: #e2e5ea;
+  --accent: #1a56db;
+  --green: #0e9f6e;
+  --green-light: #e6f7f2;
+  --red: #e02424;
+  --orange: #d97706;
+  --yellow: #ca8a04;
+  --text: #111827;
+  --text2: #6b7280;
+  --text3: #9ca3af;
+  --shadow: 0 1px 3px rgba(0,0,0,0.08);
+  --shadow-md: 0 4px 16px rgba(0,0,0,0.12);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; min-height: 100vh; }
+
+.header { background: #111827; color: white; padding: 0 16px; display: flex; align-items: center; justify-content: space-between; height: 54px; position: sticky; top: 0; z-index: 300; }
+.logo { font-family: 'Oswald', sans-serif; font-size: 20px; font-weight: 700; letter-spacing: 1px; display: flex; align-items: center; gap: 8px; }
+.logo em { color: #60a5fa; font-style: normal; }
+.header-acts { display: flex; gap: 6px; }
+
+.timer-bar { background: #1f2937; padding: 10px 16px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+.match-clock { font-family: 'JetBrains Mono', monospace; font-size: 36px; font-weight: 700; color: white; letter-spacing: 2px; line-height: 1; }
+.match-clock.paused { color: #6b7280; }
+.half-badge { background: rgba(255,255,255,0.08); color: #9ca3af; font-family: 'Oswald', sans-serif; font-size: 12px; letter-spacing: 2px; padding: 3px 10px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.12); }
+.timer-controls { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+
+.score-strip { background: white; border-bottom: 1px solid var(--border); padding: 10px 16px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.score-display { display: flex; align-items: center; gap: 8px; }
+.score-val { font-family: 'JetBrains Mono', monospace; font-size: 26px; font-weight: 700; }
+.score-sep { font-size: 22px; color: var(--text3); }
+.score-team-name { font-family: 'Oswald', sans-serif; font-size: 15px; color: var(--text2); }
+.score-acts { margin-left: auto; display: flex; gap: 6px; flex-wrap: wrap; }
+
+.tabs { display: flex; background: white; border-bottom: 2px solid var(--border); padding: 0 16px; overflow-x: auto; position: sticky; top: 54px; z-index: 200; }
+.tab-btn { padding: 11px 16px; background: none; border: none; font-family: 'Inter', sans-serif; font-weight: 600; font-size: 13px; color: var(--text3); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; white-space: nowrap; transition: all 0.15s; }
+.tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+.tab-btn:hover:not(.active) { color: var(--text2); }
+
+.panel { display: none; }
+.panel.active { display: block; }
+.content { padding: 14px 16px; max-width: 860px; margin: 0 auto; }
+
+.btn { border: none; border-radius: 8px; cursor: pointer; font-family: 'Inter', sans-serif; font-weight: 600; font-size: 13px; padding: 8px 14px; display: inline-flex; align-items: center; gap: 5px; transition: all 0.12s; white-space: nowrap; line-height: 1; }
+.btn:active { transform: scale(0.95); }
+.btn-primary { background: var(--accent); color: white; }
+.btn-primary:hover { background: #1648c0; }
+.btn-ghost { background: white; color: var(--text2); border: 1px solid var(--border); }
+.btn-ghost:hover { background: var(--surface2); color: var(--text); }
+.btn-light { background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.18); }
+.btn-light:hover { background: rgba(255,255,255,0.2); }
+.btn-green { background: var(--green); color: white; }
+.btn-green:hover { background: #0b8a5e; }
+.btn-red { background: var(--red); color: white; }
+.btn-red:hover { background: #c81e1e; }
+.btn-sm { padding: 6px 11px; font-size: 12px; }
+.btn-xs { padding: 3px 7px; font-size: 11px; border-radius: 5px; }
+
+.section-hd { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.section-title { font-family: 'Oswald', sans-serif; font-size: 14px; font-weight: 500; letter-spacing: 1px; color: var(--text2); text-transform: uppercase; }
+.count-badge { background: var(--accent); color: white; font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 10px; margin-left: 5px; }
+
+.field-zone { background: var(--green-light); border: 2px solid #a7f3d0; border-radius: 12px; padding: 12px; margin-bottom: 14px; }
+.bench-zone { background: white; border: 1px solid var(--border); border-radius: 12px; padding: 12px; margin-bottom: 14px; }
+.players-list { display: flex; flex-direction: column; gap: 7px; }
+
+.player-row { background: white; border-radius: 9px; padding: 10px 12px; display: flex; align-items: center; gap: 10px; border: 1px solid var(--border); box-shadow: var(--shadow); transition: border-color 0.15s; animation: fadeUp 0.2s ease; }
+@keyframes fadeUp { from{opacity:0;transform:translateY(5px)} to{opacity:1;transform:none} }
+.player-row.on-field { border-left: 3px solid var(--green); }
+.player-row.on-bench { border-left: 3px solid var(--border); }
+
+.num-badge { width: 36px; height: 36px; border-radius: 7px; background: #1f2937; color: white; font-family: 'Oswald', sans-serif; font-size: 17px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.on-field .num-badge { background: var(--green); }
+
+.player-info { flex: 1; min-width: 0; }
+.player-name-line { display: flex; align-items: center; gap: 6px; }
+.p-name { font-weight: 600; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pos-tag { background: var(--surface2); border: 1px solid var(--border); color: var(--text2); font-size: 10px; font-weight: 600; padding: 1px 5px; border-radius: 4px; flex-shrink: 0; }
+.player-meta { display: flex; align-items: center; gap: 8px; margin-top: 3px; flex-wrap: wrap; }
+
+.live-timer { font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 700; color: var(--green); background: #d1fae5; padding: 1px 7px; border-radius: 5px; display: flex; align-items: center; gap: 3px; }
+.live-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--green); animation: blink 1s ease-in-out infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+.total-time { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text3); }
+
+.stat-pills { display: flex; gap: 4px; flex-wrap: wrap; }
+.s-pill { display: flex; align-items: center; gap: 2px; background: var(--surface2); border: 1px solid var(--border); border-radius: 5px; padding: 1px 5px; font-size: 11px; color: var(--text2); white-space: nowrap; }
+.s-pill strong { font-weight: 700; color: var(--text); }
+.s-pill.green { background: #d1fae5; border-color: #a7f3d0; color: #065f46; }
+.s-pill.green strong { color: #065f46; }
+.s-pill.red { background: #fee2e2; border-color: #fca5a5; color: #991b1b; }
+.s-pill.red strong { color: #991b1b; }
+.s-pill.yellow { background: #fef3c7; border-color: #fde68a; color: #92400e; }
+.s-pill.yellow strong { color: #92400e; }
+.s-pill.blue { background: #dbeafe; border-color: #93c5fd; color: #1e40af; }
+.s-pill.blue strong { color: #1e40af; }
+
+.p-actions { display: flex; gap: 5px; align-items: center; flex-shrink: 0; }
+
+/* STAT MODAL */
+.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 500; align-items: flex-end; justify-content: center; backdrop-filter: blur(3px); }
+.modal-overlay.open { display: flex; }
+@media(min-width:600px) { .modal-overlay { align-items: center; } }
+
+.stat-modal { background: white; border-radius: 18px 18px 0 0; width: 100%; max-width: 540px; max-height: 90vh; overflow-y: auto; animation: slideUp 0.25s ease; padding-bottom: 24px; }
+@media(min-width:600px) { .stat-modal { border-radius: 18px; } }
+@keyframes slideUp { from{opacity:0;transform:translateY(40px)} to{opacity:1;transform:none} }
+
+.modal-handle { width: 36px; height: 4px; background: var(--border); border-radius: 2px; margin: 12px auto 0; }
+@media(min-width:600px) { .modal-handle { display: none; } }
+
+.modal-head { display: flex; align-items: center; gap: 12px; padding: 16px 20px 12px; border-bottom: 1px solid var(--border); }
+.modal-num { width: 48px; height: 48px; border-radius: 10px; background: #1f2937; color: white; font-family: 'Oswald', sans-serif; font-size: 24px; display: flex; align-items: center; justify-content: center; }
+.modal-player-name { font-weight: 700; font-size: 18px; }
+.modal-pos { font-size: 12px; color: var(--text2); margin-top: 2px; }
+.modal-close { margin-left: auto; background: var(--surface2); border: 1px solid var(--border); width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 16px; color: var(--text2); }
+.modal-close:hover { background: #fee2e2; color: var(--red); }
+
+.stat-group { padding: 14px 20px 4px; }
+.stat-group-title { font-family: 'Oswald', sans-serif; font-size: 12px; letter-spacing: 2px; color: var(--text3); text-transform: uppercase; margin-bottom: 10px; }
+.stat-rows { display: flex; flex-direction: column; gap: 6px; }
+.stat-row { display: flex; align-items: center; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; }
+.stat-row-left { flex: 1; }
+.stat-row-label { font-size: 13px; font-weight: 600; }
+.stat-row-desc { font-size: 11px; color: var(--text3); margin-top: 1px; }
+
+.stat-counter { display: flex; align-items: center; background: white; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+.counter-btn { width: 36px; height: 36px; border: none; background: none; cursor: pointer; font-size: 20px; font-weight: 700; color: var(--text2); display: flex; align-items: center; justify-content: center; transition: all 0.1s; line-height: 1; }
+.counter-btn:hover { background: var(--surface2); }
+.counter-btn.plus:hover { background: #d1fae5; color: var(--green); }
+.counter-btn.minus:hover { background: #fee2e2; color: var(--red); }
+.counter-val { min-width: 40px; text-align: center; font-family: 'JetBrains Mono', monospace; font-size: 16px; font-weight: 700; border-left: 1px solid var(--border); border-right: 1px solid var(--border); padding: 0 4px; height: 36px; display: flex; align-items: center; justify-content: center; color: var(--text3); }
+.counter-val.has-val { color: var(--accent); }
+
+.stat-row.type-goal { border-left: 3px solid var(--green); }
+.stat-row.type-shot { border-left: 3px solid #3b82f6; }
+.stat-row.type-bad { border-left: 3px solid var(--red); }
+.stat-row.type-duel { border-left: 3px solid var(--orange); }
+.stat-row.type-card { border-left: 3px solid var(--yellow); }
+.stat-row.type-gk { border-left: 3px solid #8b5cf6; }
+.stat-row.type-assist { border-left: 3px solid #06b6d4; }
+
+.stats-table { width: 100%; background: white; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; border-collapse: collapse; font-size: 12px; }
+.stats-table th { background: var(--surface2); font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text2); padding: 8px 10px; text-align: left; border-bottom: 1px solid var(--border); white-space: nowrap; }
+.stats-table td { padding: 9px 10px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.stats-table tr:last-child td { border-bottom: none; }
+.stats-table tr:hover td { background: var(--surface2); }
+.mono { font-family: 'JetBrains Mono', monospace; font-weight: 700; }
+.bar-bg { background: var(--border); border-radius: 3px; height: 5px; overflow: hidden; min-width: 60px; }
+.bar-fill { background: var(--accent); height: 100%; border-radius: 3px; transition: width 0.5s; }
+
+.add-form { background: white; border: 1px dashed var(--border); border-radius: 10px; padding: 14px; display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 14px; }
+.form-group { display: flex; flex-direction: column; gap: 3px; }
+.form-label { font-size: 10px; font-weight: 700; color: var(--text2); text-transform: uppercase; letter-spacing: 0.5px; }
+.form-input { background: var(--surface2); border: 1px solid var(--border); color: var(--text); font-family: 'Inter', sans-serif; font-size: 13px; padding: 7px 9px; border-radius: 7px; outline: none; transition: border-color 0.15s; }
+.form-input:focus { border-color: var(--accent); background: white; }
+.form-select { background: var(--surface2); border: 1px solid var(--border); color: var(--text); font-family: 'Inter', sans-serif; font-size: 13px; padding: 7px 9px; border-radius: 7px; outline: none; cursor: pointer; }
+
+.history-box { background: white; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+.history-hd { padding: 11px 14px; border-bottom: 1px solid var(--border); background: var(--surface2); display: flex; justify-content: space-between; align-items: center; }
+.history-list { max-height: 400px; overflow-y: auto; }
+.h-item { display: flex; align-items: center; gap: 10px; padding: 8px 14px; border-bottom: 1px solid var(--border); font-size: 12px; }
+.h-item:last-child { border-bottom: none; }
+.h-time { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--text3); min-width: 40px; }
+.h-text { flex: 1; }
+
+.reset-modal { background: white; border-radius: 16px; padding: 22px; max-width: 360px; width: 90%; box-shadow: var(--shadow-md); animation: popIn 0.2s ease; }
+@keyframes popIn { from{opacity:0;transform:scale(0.93)} to{opacity:1;transform:none} }
+.modal-btns { display: flex; gap: 8px; margin-top: 14px; justify-content: flex-end; }
+
+.toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(16px); background: #111827; color: white; padding: 9px 18px; border-radius: 30px; font-size: 13px; font-weight: 500; opacity: 0; transition: all 0.25s; z-index: 9999; white-space: nowrap; }
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.empty { text-align: center; padding: 28px 16px; color: var(--text3); font-size: 13px; }
+.empty-icon { font-size: 28px; margin-bottom: 6px; }
+hr { border: none; border-top: 1px solid var(--border); margin: 10px 0; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">🤾 <em>Handball</em> Stats</div>
+  <div class="header-acts">
+    <button class="btn btn-light btn-sm" onclick="exportData()">📋 Export</button>
+    <button class="btn btn-light btn-sm" onclick="openResetModal()">↺ Reset</button>
+  </div>
+</div>
+
+<div class="timer-bar">
+  <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+    <div class="match-clock paused" id="matchClock">00:00</div>
+    <div class="half-badge" id="halfBadge">1. HALBZEIT</div>
+  </div>
+  <div class="timer-controls">
+    <button class="btn btn-green btn-sm" id="timerBtn" onclick="toggleTimer()">▶ Start</button>
+    <button class="btn btn-light btn-sm" onclick="resetTimer()">↺</button>
+    <button class="btn btn-light btn-sm" onclick="switchHalf()">⇌ Halbzeit</button>
+  </div>
+</div>
+
+<div class="score-strip">
+  <div class="score-display">
+    <span class="score-team-name" id="teamNameDisplay">Mein Team</span>
+    <span class="score-val" id="scoreHome" style="color:var(--accent)">0</span>
+    <span class="score-sep">:</span>
+    <span class="score-val" id="scoreAway" style="color:var(--text3)">0</span>
+    <span class="score-team-name" id="opponentDisplay">Gegner</span>
+  </div>
+  <div class="score-acts">
+    <button class="btn btn-ghost btn-sm" onclick="adjustScore('home',-1)">−</button>
+    <button class="btn btn-primary btn-sm" onclick="adjustScore('home',1)">+ Tor</button>
+    <span style="color:var(--border);padding:0 2px">|</span>
+    <button class="btn btn-ghost btn-sm" onclick="adjustScore('away',1)">+ Gegentore</button>
+    <button class="btn btn-ghost btn-sm" onclick="adjustScore('away',-1)">−</button>
+  </div>
+</div>
+
+<div class="tabs">
+  <button class="tab-btn active" onclick="switchTab('tab-feld',this)">🏃 Spieler</button>
+  <button class="tab-btn" onclick="switchTab('tab-stats',this)">📊 Statistiken</button>
+  <button class="tab-btn" onclick="switchTab('tab-log',this)">📜 Protokoll</button>
+  <button class="tab-btn" onclick="switchTab('tab-setup',this)">⚙️ Setup</button>
+</div>
+
+<!-- SPIELER TAB -->
+<div id="tab-feld" class="panel active">
+<div class="content">
+  <div class="field-zone">
+    <div class="section-hd">
+      <div class="section-title" style="color:#065f46">Auf dem Feld <span id="fieldCount" class="count-badge" style="background:var(--green)">0</span></div>
+      <button class="btn btn-ghost btn-sm" onclick="rotateAll()">⇌ Rotation</button>
+    </div>
+    <div class="players-list" id="fieldList">
+      <div class="empty"><div class="empty-icon">🏟️</div>Keine Spieler auf dem Feld</div>
+    </div>
+  </div>
+  <div class="bench-zone">
+    <div class="section-hd">
+      <div class="section-title">Bank <span id="benchCount" class="count-badge" style="background:var(--text3)">0</span></div>
+    </div>
+    <div class="players-list" id="benchList">
+      <div class="empty"><div class="empty-icon">🪑</div>Keine Bankspieler</div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- STATISTIKEN TAB -->
+<div id="tab-stats" class="panel">
+<div class="content">
+  <div class="section-hd" style="margin-top:2px">
+    <div class="section-title">Spieler-Statistiken</div>
+    <select class="form-select" id="statSortSelect" onchange="renderStats()" style="font-size:12px;padding:5px 8px">
+      <option value="time">Sortieren: Spielzeit</option>
+      <option value="goals">Sortieren: Tore</option>
+      <option value="assists">Sortieren: Assists</option>
+      <option value="duel_won">Sortieren: 1vs1 Gew.</option>
+    </select>
+  </div>
+  <div style="overflow-x:auto">
+  <table class="stats-table">
+    <thead>
+      <tr>
+        <th>#</th><th>Spieler</th><th>Pos</th><th>Zeit</th>
+        <th title="Tore">⚽</th><th title="Assists">🎯</th>
+        <th title="Fehlwürfe">❌</th><th title="Technische Fehler">⚠️</th>
+        <th title="1vs1 Gewonnen">👊+</th><th title="1vs1 Verloren">👊−</th>
+        <th title="2-Minuten">⏱</th><th title="Rote Karte">🔴</th>
+        <th title="Paraden TW">🧤</th><th>Zeit %</th>
+      </tr>
+    </thead>
+    <tbody id="statsBody"></tbody>
+  </table>
+  </div>
+  <p style="font-size:11px;color:var(--text3);margin-top:8px">⚽ Tore · 🎯 Assists · ❌ Fehlwürfe · ⚠️ Tech. Fehler · 👊 1vs1 · ⏱ 2min · 🔴 Rot · 🧤 Paraden (TW)</p>
+</div>
+</div>
+
+<!-- PROTOKOLL TAB -->
+<div id="tab-log" class="panel">
+<div class="content">
+  <div class="history-box">
+    <div class="history-hd">
+      <span style="font-family:'Oswald',sans-serif;letter-spacing:1px;font-size:14px">SPIELPROTOKOLL</span>
+      <button class="btn btn-ghost btn-sm" onclick="clearLog()">Leeren</button>
+    </div>
+    <div class="history-list" id="historyList">
+      <div class="empty">Noch keine Ereignisse</div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- SETUP TAB -->
+<div id="tab-setup" class="panel">
+<div class="content">
+  <div style="background:white;border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:14px">
+    <div class="section-title" style="margin-bottom:12px">Team</div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <div class="form-group">
+        <label class="form-label">Team Name</label>
+        <input class="form-input" id="teamNameInput" placeholder="z.B. HC Muri" oninput="updateTeamName()">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Gegner</label>
+        <input class="form-input" id="opponentInput" placeholder="Gegner-Name" oninput="updateOpponent()">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Halbzeit (Min)</label>
+        <input class="form-input" id="halfDuration" type="number" value="30" min="5" max="60" style="width:80px" oninput="save()">
+      </div>
+    </div>
+  </div>
+  <div class="section-hd"><div class="section-title">Spieler hinzufügen</div></div>
+  <div class="add-form">
+    <div class="form-group">
+      <label class="form-label">Nr.</label>
+      <input class="form-input" id="newNum" type="number" min="1" max="99" placeholder="7" style="width:64px">
+    </div>
+    <div class="form-group" style="flex:1;min-width:130px">
+      <label class="form-label">Name</label>
+      <input class="form-input" id="newName" placeholder="Vor- und Nachname">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Position</label>
+      <select class="form-select" id="newPos">
+        <option value="LA">LA — Linksaußen</option>
+        <option value="RL">RL — Rückraum Li.</option>
+        <option value="RM" selected>RM — Rückraum Mi.</option>
+        <option value="RR">RR — Rückraum Re.</option>
+        <option value="RA">RA — Rechtsaußen</option>
+        <option value="KR">KR — Kreisläufer</option>
+        <option value="TW">TW — Torwart</option>
+      </select>
+    </div>
+    <button class="btn btn-primary" onclick="addPlayer()">+ Hinzufügen</button>
+  </div>
+  <div class="section-hd"><div class="section-title">Spielerliste</div></div>
+  <div id="setupPlayerList" style="display:flex;flex-direction:column;gap:6px"></div>
+</div>
+</div>
+
+<!-- STAT MODAL -->
+<div class="modal-overlay" id="statModal" onclick="handleStatModalClick(event)">
+  <div class="stat-modal" id="statModalInner">
+    <div class="modal-handle"></div>
+    <div class="modal-head">
+      <div class="modal-num" id="modalNum">7</div>
+      <div>
+        <div class="modal-player-name" id="modalName">Spieler</div>
+        <div class="modal-pos" id="modalPos">Position</div>
+      </div>
+      <div class="modal-close" onclick="closeStatModal()">✕</div>
+    </div>
+
+    <div class="stat-group">
+      <div class="stat-group-title">⚔️ Angriff</div>
+      <div class="stat-rows">
+        <div class="stat-row type-goal">
+          <div class="stat-row-left"><div class="stat-row-label">⚽ Tor</div><div class="stat-row-desc">Erzieltes Tor</div></div>
+          <div class="stat-counter"><button class="counter-btn minus" onclick="changeStat('goals',-1)">−</button><div class="counter-val" id="sv-goals">0</div><button class="counter-btn plus" onclick="changeStat('goals',1)">+</button></div>
+        </div>
+        <div class="stat-row type-assist">
+          <div class="stat-row-left"><div class="stat-row-label">🎯 Assist</div><div class="stat-row-desc">Torvorlage</div></div>
+          <div class="stat-counter"><button class="counter-btn minus" onclick="changeStat('assists',-1)">−</button><div class="counter-val" id="sv-assists">0</div><button class="counter-btn plus" onclick="changeStat('assists',1)">+</button></div>
+        </div>
+        <div class="stat-row type-shot">
+          <div class="stat-row-left"><div class="stat-row-label">🏐 Wurf aufs Tor</div><div class="stat-row-desc">Schuss gehalten (kein Tor)</div></div>
+          <div class="stat-counter"><button class="counter-btn minus" onclick="changeStat('shots_on',-1)">−</button><div class="counter-val" id="sv-shots_on">0</div><button class="counter-btn plus" onclick="changeStat('shots_on',1)">+</button></div>
+        </div>
+        <div class="stat-row type-bad">
+          <div class="stat-row-left"><div class="stat-row-label">❌ Fehlwurf</div><div class="stat-row-desc">Wurf daneben / geblockt</div></div>
+          <div class="stat-counter"><button class="counter-btn minus" onclick="changeStat('shots_off',-1)">−</button><div class="counter-val" id="sv-shots_off">0</div><button class="counter-btn plus" onclick="changeStat('shots_off',1)">+</button></div>
+        </div>
+        <div class="stat-row type-bad">
+          <div class="stat-row-left"><div class="stat-row-label">⚠️ Technischer Fehler</div><div class="stat-row-desc">Fehlpass, Schritte, Abseits etc.</div></div>
+          <div class="stat-counter"><button class="counter-btn minus" onclick="changeStat('tech_errors',-1)">−</button><div class="counter-val" id="sv-tech_errors">0</div><button class="counter-btn plus" onclick="changeStat('tech_errors',1)">+</button></div>
+        </div>
+        <div class="stat-row type-shot">
+          <div class="stat-row-left"><div class="stat-row-label">⚡ 7m erhalten</div><div class="stat-row-desc">Siebenmeter herausgeholt</div></div>
+          <div class="stat-counter"><button class="counter-btn minus" onclick="changeStat('penalties_won',-1)">−</button><div class="counter-val" id="sv-penalties_won">0</div><button class="counter-btn plus" onclick="changeStat('penalties_won',1)">+</button></div>
+        </div>
+        <div class="stat-row type-bad">
+          <div class="stat-row-left"><div class="stat-row-label">🚫 7m verschossen</div><div class="stat-row-desc">Siebenmeter daneben/gehalten</div></div>
+          <div class="stat-counter"><button class="counter-btn minus" onclick="changeStat('penalties_missed',-1)">−</button><div class="counter-val" id="sv-penalties_missed">0</div><button class="counter-btn plus" onclick="changeStat('penalties_missed',1)">+</button></div>
+        </div>
+      </div>
+    </div>
+
+    <hr>
+
+    <div class="stat-group">
+      <div class="stat-group-title">💪 Zweikampf</div>
+      <div class="stat-rows">
+        <div class="stat-row type-duel">
+          <div class="stat-row-left"><div class="stat-row-label">👊 1vs1 Gewonnen</div><div class="stat-row-desc">Gegner erfolgreich ausgespielt</div></div>
+          <div class="stat-counter"><button class="counter-btn minus" onclick="changeStat('duel_won',-1)">−</button><div class="counter-val" id="sv-duel_won">0</div><button class="counter-btn plus" onclick="changeStat('duel_won',1)">+</button></div>
+        </div>
+        <div class="stat-row type-bad">
+          <div class="stat-row-left"><div class="stat-row-label">💔 1vs1 Verloren</div><div class="stat-row-desc">Gegner hat sich durchgesetzt</div></div>
+          <div class="stat-counter"><button class="counter-btn minus" onclick="changeStat('duel_lost',-1)">−</button><div class="counter-val" id="sv-duel_lost">0</div><button class="counter-btn plus" onclick="changeStat('duel_lost',1)">+</button></div>
+        </div>
+        <div class="stat-row type-duel">
+          <div class="stat-row-left"><div class="stat-row-label">🛡️ Abwehraktion</div><div class="stat-row-desc">Schuss geblockt / Angriff gestoppt</div></div>
+          <div class="stat-counter"><button class="counter-btn minus" onclick="changeStat('blocks',-1)">−</button><div class="counter-val" id="sv-blocks">0</div><button class="counter-btn plus" onclick="changeStat('blocks',1)">+</button></div>
+        </div>
+        <div class="stat-row type-duel">
+          <div class="stat-row-left"><div class="stat-row-label">🔄 Ballgewinn</div><div class="stat-row-desc">Intercept / Ball abgenommen</div></div>
+          <div class="stat-counter"><button class="counter-btn minus" onclick="changeStat('steals',-1)">−</button><div class="counter-val" id="sv-steals">0</div><button class="counter-btn plus" onclick="changeStat('steals',1)">+</button></div>
+        </div>
+      </div>
+    </div>
+
+    <hr>
+
+    <div class="stat-group">
+      <div class="stat-group-title">🟡 Karten & Strafen</div>
+      <div class="stat-rows">
+        <div class="stat-row type-card">
+          <div class="stat-row-left"><div class="stat-row-label">🟡 Gelbe Karte</div><div class="stat-row-desc">Verwarnung</div></div>
+          <div class="stat-counter"><button class="counter-btn minus" onclick="changeStat('yellow_cards',-1)">−</button><div class="counter-val" id="sv-yellow_cards">0</div><button class="counter-btn plus" onclick="changeStat('yellow_cards',1)">+</button></div>
+        </div>
+        <div class="stat-row type-card">
+          <div class="stat-row-left"><div class="stat-row-label">⏱ 2-Minuten</div><div class="stat-row-desc">Zeitstrafe</div></div>
+          <div class="stat-counter"><button class="counter-btn minus" onclick="changeStat('cards_2min',-1)">−</button><div class="counter-val" id="sv-cards_2min">0</div><button class="counter-btn plus" onclick="changeStat('cards_2min',1)">+</button></div>
+        </div>
+        <div class="stat-row type-bad">
+          <div class="stat-row-left"><div class="stat-row-label">🔴 Rote Karte</div><div class="stat-row-desc">Disqualifikation</div></div>
+          <div class="stat-counter"><button class="counter-btn minus" onclick="changeStat('red_card',-1)">−</button><div class="counter-val" id="sv-red_card">0</div><button class="counter-btn plus" onclick="changeStat('red_card',1)">+</button></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="gkSection" style="display:none">
+      <hr>
+      <div class="stat-group">
+        <div class="stat-group-title">🧤 Torwart</div>
+        <div class="stat-rows">
+          <div class="stat-row type-gk">
+            <div class="stat-row-left"><div class="stat-row-label">🧤 Parade</div><div class="stat-row-desc">Gehaltener Schuss</div></div>
+            <div class="stat-counter"><button class="counter-btn minus" onclick="changeStat('saves',-1)">−</button><div class="counter-val" id="sv-saves">0</div><button class="counter-btn plus" onclick="changeStat('saves',1)">+</button></div>
+          </div>
+          <div class="stat-row type-bad">
+            <div class="stat-row-left"><div class="stat-row-label">💥 Gegentore</div><div class="stat-row-desc">Tor kassiert</div></div>
+            <div class="stat-counter"><button class="counter-btn minus" onclick="changeStat('goals_conceded',-1)">−</button><div class="counter-val" id="sv-goals_conceded">0</div><button class="counter-btn plus" onclick="changeStat('goals_conceded',1)">+</button></div>
+          </div>
+          <div class="stat-row type-gk">
+            <div class="stat-row-left"><div class="stat-row-label">⚡ 7m gehalten</div><div class="stat-row-desc">Siebenmeter gehalten</div></div>
+            <div class="stat-counter"><button class="counter-btn minus" onclick="changeStat('penalties_saved',-1)">−</button><div class="counter-val" id="sv-penalties_saved">0</div><button class="counter-btn plus" onclick="changeStat('penalties_saved',1)">+</button></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="height:12px"></div>
+  </div>
+</div>
+
+<!-- RESET MODAL -->
+<div class="modal-overlay" id="resetModal" onclick="handleResetClick(event)">
+  <div class="reset-modal">
+    <h3 style="font-family:'Oswald',sans-serif;font-size:18px;letter-spacing:1px;margin-bottom:10px">ZURÜCKSETZEN</h3>
+    <p style="font-size:13px;color:var(--text2)">Was soll zurückgesetzt werden?</p>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-top:12px">
+      <button class="btn btn-ghost" style="justify-content:flex-start" onclick="resetMatch()">⏱ Spielzeit & Score zurücksetzen</button>
+      <button class="btn btn-ghost" style="justify-content:flex-start" onclick="resetStats()">📊 Alle Statistiken zurücksetzen</button>
+      <button class="btn btn-red" style="justify-content:flex-start" onclick="resetAll()">🗑 Alles löschen (inkl. Spieler)</button>
+    </div>
+    <div class="modal-btns"><button class="btn btn-ghost" onclick="closeResetModal()">Abbrechen</button></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const STAT_KEYS = ['goals','assists','shots_on','shots_off','tech_errors','penalties_won','penalties_missed','duel_won','duel_lost','blocks','steals','yellow_cards','cards_2min','red_card','saves','goals_conceded','penalties_saved'];
+
+let S = { team:'Mein Team', opponent:'Gegner', halfDuration:30, score:{home:0,away:0}, timer:{secs:0,running:false,half:1}, players:[], log:[] };
+let timerInterval = null;
+let activePlayerId = null;
+
+function save() { localStorage.setItem('hbz2_state', JSON.stringify(S)); }
+function load() {
+  const raw = localStorage.getItem('hbz2_state');
+  if (raw) { try { S = JSON.parse(raw); } catch(e){} }
+  document.getElementById('teamNameInput').value = S.team||'';
+  document.getElementById('opponentInput').value = S.opponent||'';
+  document.getElementById('halfDuration').value = S.halfDuration||30;
+  renderAll();
+}
+
+function toggleTimer() { S.timer.running ? stopTimer() : startTimer(); }
+function startTimer() {
+  if (S.timer.running) return;
+  S.timer.running = true;
+  const t0 = Date.now() - S.timer.secs * 1000;
+  S.players.forEach(p => { if (p.onField && p.fieldEnter===undefined) p.fieldEnter = S.timer.secs; });
+  timerInterval = setInterval(() => {
+    S.timer.secs = Math.round((Date.now()-t0)/1000);
+    updateClockDisplay(); updateLiveTimers();
+    if (S.timer.secs%20===0) save();
+  }, 500);
+  updateTimerBtn(); renderPlayers(); save();
+}
+function stopTimer() {
+  if (!S.timer.running) return;
+  clearInterval(timerInterval); S.timer.running = false;
+  S.players.forEach(p => {
+    if (p.onField && p.fieldEnter!==undefined) { p.totalSecs=(p.totalSecs||0)+(S.timer.secs-p.fieldEnter); p.fieldEnter=undefined; }
+  });
+  updateTimerBtn(); renderPlayers(); save();
+}
+function resetTimer() { stopTimer(); S.timer.secs=0; S.players.forEach(p=>p.fieldEnter=undefined); updateClockDisplay(); save(); }
+function switchHalf() {
+  stopTimer(); S.timer.half = S.timer.half===1?2:1; S.timer.secs=0;
+  document.getElementById('halfBadge').textContent = S.timer.half+'. HALBZEIT';
+  addLog('⏸', S.timer.half+'. Halbzeit beginnt', ''); updateClockDisplay(); renderPlayers(); save();
+  toast('⇌ '+S.timer.half+'. Halbzeit');
+}
+function updateClockDisplay() {
+  const m=Math.floor(S.timer.secs/60).toString().padStart(2,'0'), s=(S.timer.secs%60).toString().padStart(2,'0');
+  const el=document.getElementById('matchClock'); el.textContent=m+':'+s;
+  el.className='match-clock'+(S.timer.running?'':' paused');
+}
+function updateTimerBtn() {
+  const b=document.getElementById('timerBtn');
+  b.textContent=S.timer.running?'⏸ Pause':'▶ Start';
+  b.className=S.timer.running?'btn btn-red btn-sm':'btn btn-green btn-sm';
+}
+function updateLiveTimers() {
+  S.players.forEach(p => { if(p.onField){const el=document.getElementById('lt-'+p.id);if(el)el.textContent=fmtTime(getCurSecs(p));} });
+}
+function getCurSecs(p) {
+  let t=p.totalSecs||0;
+  if(p.onField&&p.fieldEnter!==undefined&&S.timer.running) t+=S.timer.secs-p.fieldEnter;
+  return t;
+}
+function fmtTime(s) { return s<60?s+'s':Math.floor(s/60)+':'+(s%60).toString().padStart(2,'0'); }
+function fmtTimeLong(s) { return Math.floor(s/60)+'min '+(s%60).toString().padStart(2,'0')+'s'; }
+function getTimerStr() { return Math.floor(S.timer.secs/60).toString().padStart(2,'0')+':'+(S.timer.secs%60).toString().padStart(2,'0'); }
+
+function addPlayer() {
+  const num=parseInt(document.getElementById('newNum').value);
+  const name=document.getElementById('newName').value.trim();
+  const pos=document.getElementById('newPos').value;
+  if(!num||!name){toast('⚠️ Nummer und Name eingeben');return;}
+  if(S.players.find(p=>p.num===num)){toast('Rückennummer bereits vergeben');return;}
+  const stats={};STAT_KEYS.forEach(k=>stats[k]=0);
+  S.players.push({id:Date.now(),num,name,pos,onField:false,totalSecs:0,stints:0,fieldEnter:undefined,...stats});
+  S.players.sort((a,b)=>a.num-b.num);
+  document.getElementById('newNum').value=''; document.getElementById('newName').value='';
+  document.getElementById('newNum').focus();
+  renderAll(); save(); toast('✅ '+name+' hinzugefügt');
+}
+function removePlayer(id) {
+  const p=S.players.find(x=>x.id===id); if(!p||!confirm(p.name+' entfernen?'))return;
+  S.players=S.players.filter(x=>x.id!==id); renderAll(); save();
+}
+function subIn(id) {
+  const p=S.players.find(x=>x.id===id); if(!p||p.onField)return;
+  p.onField=true; p.stints=(p.stints||0)+1;
+  if(S.timer.running) p.fieldEnter=S.timer.secs;
+  addLog('🟢',p.name+' (#'+p.num+') eingewechselt',p.name);
+  renderPlayers(); save(); toast('🟢 '+p.name+' auf dem Feld');
+}
+function subOut(id) {
+  const p=S.players.find(x=>x.id===id); if(!p||!p.onField)return;
+  if(S.timer.running&&p.fieldEnter!==undefined){p.totalSecs=(p.totalSecs||0)+(S.timer.secs-p.fieldEnter);p.fieldEnter=undefined;}
+  p.onField=false;
+  addLog('🔴',p.name+' (#'+p.num+') ausgewechselt',p.name);
+  renderPlayers(); renderStats(); save(); toast('🔴 '+p.name+' auf der Bank');
+}
+function rotateAll() {
+  const on=S.players.filter(p=>p.onField), off=S.players.filter(p=>!p.onField);
+  if(!off.length){toast('Keine Bankspieler');return;}
+  on.forEach(p=>subOut(p.id)); off.forEach(p=>subIn(p.id)); toast('⇌ Rotation');
+}
+function adjustScore(side,delta) {
+  S.score[side]=Math.max(0,S.score[side]+delta);
+  document.getElementById(side==='home'?'scoreHome':'scoreAway').textContent=S.score[side];
+  if(delta>0) addLog(side==='home'?'⚽':'❌',side==='home'?'Tor für '+S.team:'Gegentore','');
+  save();
+}
+
+function openStatModal(id) {
+  activePlayerId=id; const p=S.players.find(x=>x.id===id); if(!p)return;
+  document.getElementById('modalNum').textContent=p.num;
+  document.getElementById('modalName').textContent=p.name;
+  document.getElementById('modalPos').textContent=p.pos+' · '+fmtTimeLong(getCurSecs(p));
+  document.getElementById('gkSection').style.display=p.pos==='TW'?'block':'none';
+  STAT_KEYS.forEach(k=>{const el=document.getElementById('sv-'+k);if(el){const v=p[k]||0;el.textContent=v;el.className='counter-val'+(v>0?' has-val':'');}});
+  document.getElementById('statModal').classList.add('open');
+}
+function closeStatModal() {
+  document.getElementById('statModal').classList.remove('open');
+  activePlayerId=null; renderPlayers(); renderStats(); save();
+}
+function handleStatModalClick(e) { if(e.target===document.getElementById('statModal'))closeStatModal(); }
+function changeStat(key,delta) {
+  const p=S.players.find(x=>x.id===activePlayerId); if(!p)return;
+  p[key]=Math.max(0,(p[key]||0)+delta);
+  const el=document.getElementById('sv-'+key);
+  if(el){el.textContent=p[key];el.className='counter-val'+(p[key]>0?' has-val':'');}
+  const labels={goals:'Tor',assists:'Assist',cards_2min:'2-Minuten',red_card:'Rote Karte',yellow_cards:'Gelbe Karte',duel_won:'1vs1 Gewonnen',duel_lost:'1vs1 Verloren',saves:'Parade',tech_errors:'Technischer Fehler',shots_off:'Fehlwurf'};
+  const icons={goals:'⚽',assists:'🎯',cards_2min:'⏱',red_card:'🔴',yellow_cards:'🟡',duel_won:'👊',duel_lost:'💔',saves:'🧤',tech_errors:'⚠️',shots_off:'❌'};
+  if(delta>0&&labels[key]) addLog(icons[key]||'📝',labels[key]+': '+p.name,p.name);
+}
+
+function addLog(icon,text,player) {
+  S.log.unshift({icon,text,player,time:getTimerStr(),half:S.timer.half});
+  if(S.log.length>300)S.log=S.log.slice(0,300);
+  if(document.getElementById('tab-log').classList.contains('active'))renderLog();
+}
+function clearLog(){if(confirm('Protokoll leeren?')){S.log=[];renderLog();save();}}
+
+function renderAll() {
+  updateClockDisplay(); updateTimerBtn();
+  document.getElementById('teamNameDisplay').textContent=S.team||'Mein Team';
+  document.getElementById('opponentDisplay').textContent=S.opponent||'Gegner';
+  document.getElementById('halfBadge').textContent=S.timer.half+'. HALBZEIT';
+  document.getElementById('scoreHome').textContent=S.score.home;
+  document.getElementById('scoreAway').textContent=S.score.away;
+  renderPlayers(); renderStats(); renderLog(); renderSetupList();
+}
+
+function statPills(p) {
+  const pills=[];
+  if(p.goals>0)       pills.push(`<span class="s-pill green"><strong>${p.goals}</strong>⚽</span>`);
+  if(p.assists>0)     pills.push(`<span class="s-pill blue"><strong>${p.assists}</strong>🎯</span>`);
+  if(p.duel_won>0)    pills.push(`<span class="s-pill green"><strong>${p.duel_won}</strong>👊+</span>`);
+  if(p.duel_lost>0)   pills.push(`<span class="s-pill red"><strong>${p.duel_lost}</strong>👊−</span>`);
+  if(p.cards_2min>0)  pills.push(`<span class="s-pill yellow"><strong>${p.cards_2min}</strong>⏱</span>`);
+  if(p.red_card>0)    pills.push(`<span class="s-pill red">🔴</span>`);
+  if(p.saves>0)       pills.push(`<span class="s-pill blue"><strong>${p.saves}</strong>🧤</span>`);
+  if(p.tech_errors>0) pills.push(`<span class="s-pill red"><strong>${p.tech_errors}</strong>⚠️</span>`);
+  return pills.length?`<div class="stat-pills">${pills.join('')}</div>`:'';
+}
+
+function playerRowHTML(p,isField) {
+  const secs=getCurSecs(p);
+  const live=isField?`<span class="live-timer"><span class="live-dot"></span><span id="lt-${p.id}">${fmtTime(secs)}</span></span>`:'';
+  const total=`<span class="total-time">Σ ${fmtTime(p.totalSecs||0)}</span>`;
+  const subBtn=isField
+    ?`<button class="btn btn-sm btn-ghost" style="color:var(--red)" onclick="subOut(${p.id})">⬇ Raus</button>`
+    :`<button class="btn btn-sm btn-green" onclick="subIn(${p.id})">⬆ Rein</button>`;
+  return `<div class="player-row ${isField?'on-field':'on-bench'}">
+    <div class="num-badge">${p.num}</div>
+    <div class="player-info">
+      <div class="player-name-line"><span class="p-name">${p.name}</span><span class="pos-tag">${p.pos}</span></div>
+      <div class="player-meta">${live}${total}${statPills(p)}</div>
+    </div>
+    <div class="p-actions">
+      <button class="btn btn-ghost btn-sm" onclick="openStatModal(${p.id})" title="Statistiken erfassen">📊</button>
+      ${subBtn}
+    </div>
+  </div>`;
+}
+
+function renderPlayers() {
+  const field=S.players.filter(p=>p.onField), bench=S.players.filter(p=>!p.onField);
+  document.getElementById('fieldCount').textContent=field.length;
+  document.getElementById('benchCount').textContent=bench.length;
+  document.getElementById('fieldList').innerHTML=field.length?field.map(p=>playerRowHTML(p,true)).join(''):'<div class="empty"><div class="empty-icon">🏟️</div>Keine Spieler auf dem Feld</div>';
+  document.getElementById('benchList').innerHTML=bench.length?bench.map(p=>playerRowHTML(p,false)).join(''):'<div class="empty"><div class="empty-icon">🪑</div>Keine Bankspieler</div>';
+}
+
+function renderStats() {
+  const tbody=document.getElementById('statsBody');
+  if(!S.players.length){tbody.innerHTML='<tr><td colspan="14" style="text-align:center;color:var(--text3);padding:20px">Keine Spieler</td></tr>';return;}
+  const sort=document.getElementById('statSortSelect').value;
+  const sorted=[...S.players].sort((a,b)=>sort==='time'?getCurSecs(b)-getCurSecs(a):(b[sort]||0)-(a[sort]||0));
+  const maxSecs=Math.max(...S.players.map(p=>getCurSecs(p)),1);
+  const totalMatch=(S.halfDuration||30)*60*2;
+  tbody.innerHTML=sorted.map(p=>{
+    const secs=getCurSecs(p), pct=Math.round(secs/maxSecs*100), pctM=Math.min(100,Math.round(secs/totalMatch*100));
+    const c=(v,pos,neg)=>v>0?pos:neg||'var(--text3)';
+    return `<tr>
+      <td class="mono" style="color:var(--text3)">${p.num}</td>
+      <td><strong>${p.name}</strong></td>
+      <td style="color:var(--text2)">${p.pos}</td>
+      <td class="mono" style="color:var(--accent);font-size:11px">${fmtTime(secs)}</td>
+      <td class="mono" style="color:${c(p.goals,'var(--green)')}">${p.goals||0}</td>
+      <td class="mono" style="color:${c(p.assists,'#1d4ed8')}">${p.assists||0}</td>
+      <td class="mono" style="color:${c(p.shots_off,'var(--red)')}">${p.shots_off||0}</td>
+      <td class="mono" style="color:${c(p.tech_errors,'var(--orange)')}">${p.tech_errors||0}</td>
+      <td class="mono" style="color:${c(p.duel_won,'var(--green)')}">${p.duel_won||0}</td>
+      <td class="mono" style="color:${c(p.duel_lost,'var(--red)')}">${p.duel_lost||0}</td>
+      <td class="mono" style="color:${c(p.cards_2min,'var(--yellow)')}">${p.cards_2min||0}</td>
+      <td class="mono" style="color:${c(p.red_card,'var(--red)')}">${p.red_card||0}</td>
+      <td class="mono" style="color:${p.pos==='TW'&&(p.saves||0)>0?'#7c3aed':'var(--text3)'}">${p.pos==='TW'?p.saves||0:'—'}</td>
+      <td style="min-width:80px"><div class="bar-bg"><div class="bar-fill" style="width:${pct}%"></div></div><div style="font-size:9px;color:var(--text3);margin-top:2px">${pctM}%</div></td>
+    </tr>`;
+  }).join('');
+}
+
+function renderLog() {
+  const list=document.getElementById('historyList');
+  if(!S.log.length){list.innerHTML='<div class="empty">Noch keine Ereignisse</div>';return;}
+  list.innerHTML=S.log.map(e=>`<div class="h-item"><span class="h-time">${e.time}</span><span style="font-size:15px">${e.icon}</span><span class="h-text">${e.text}</span><span style="font-size:10px;color:var(--text3)">${e.half}.HZ</span></div>`).join('');
+}
+
+function renderSetupList() {
+  const el=document.getElementById('setupPlayerList');
+  if(!S.players.length){el.innerHTML='<div class="empty">Noch keine Spieler</div>';return;}
+  el.innerHTML=S.players.map(p=>`<div style="display:flex;align-items:center;gap:10px;background:white;border:1px solid var(--border);border-radius:8px;padding:9px 12px">
+    <span class="mono" style="color:var(--text3);min-width:24px">#${p.num}</span>
+    <span style="flex:1;font-weight:600;font-size:13px">${p.name}</span>
+    <span style="font-size:11px;color:var(--text3);background:var(--surface2);padding:1px 6px;border-radius:4px">${p.pos}</span>
+    <span style="font-size:11px;color:var(--text3)">${fmtTimeLong(getCurSecs(p))}</span>
+    <button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="removePlayer(${p.id})">✕</button>
+  </div>`).join('');
+}
+
+function switchTab(id,btn) {
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById(id).classList.add('active'); btn.classList.add('active');
+  if(id==='tab-stats')renderStats(); if(id==='tab-log')renderLog(); if(id==='tab-setup')renderSetupList();
+}
+function updateTeamName(){S.team=document.getElementById('teamNameInput').value;document.getElementById('teamNameDisplay').textContent=S.team||'Mein Team';save();}
+function updateOpponent(){S.opponent=document.getElementById('opponentInput').value;document.getElementById('opponentDisplay').textContent=S.opponent||'Gegner';save();}
+function openResetModal(){document.getElementById('resetModal').classList.add('open');}
+function closeResetModal(){document.getElementById('resetModal').classList.remove('open');}
+function handleResetClick(e){if(e.target===document.getElementById('resetModal'))closeResetModal();}
+
+function resetMatch(){
+  closeResetModal();stopTimer();S.timer.secs=0;S.timer.half=1;S.score={home:0,away:0};S.log=[];
+  S.players.forEach(p=>{p.totalSecs=0;p.stints=0;p.onField=false;p.fieldEnter=undefined;});
+  renderAll();save();toast('🔄 Spiel zurückgesetzt');
+}
+function resetStats(){
+  closeResetModal();
+  S.players.forEach(p=>{STAT_KEYS.forEach(k=>p[k]=0);});
+  renderAll();save();toast('📊 Statistiken zurückgesetzt');
+}
+function resetAll(){
+  closeResetModal();stopTimer();S.players=[];S.log=[];S.score={home:0,away:0};S.timer={secs:0,running:false,half:1};
+  renderAll();save();toast('🗑 Alles zurückgesetzt');
+}
+
+function exportData(){
+  let txt=`HANDBALL STATISTIK\n${S.team} vs. ${S.opponent}\nScore: ${S.score.home}:${S.score.away}\n${'='.repeat(45)}\n\n`;
+  [...S.players].sort((a,b)=>getCurSecs(b)-getCurSecs(a)).forEach(p=>{
+    txt+=`#${p.num} ${p.name} (${p.pos}) — ${fmtTimeLong(getCurSecs(p))} | ${p.stints||0} Einsätze\n`;
+    txt+=`  Tore: ${p.goals}  Assists: ${p.assists}  Fehlwürfe: ${p.shots_off}  Tech.Fehler: ${p.tech_errors}\n`;
+    txt+=`  1vs1 Gew: ${p.duel_won}  1vs1 Verl: ${p.duel_lost}  Ballgewinne: ${p.steals}  Blocks: ${p.blocks}\n`;
+    txt+=`  7m erh: ${p.penalties_won}  7m versch: ${p.penalties_missed}  2min: ${p.cards_2min}  Gelb: ${p.yellow_cards}  Rot: ${p.red_card}\n`;
+    if(p.pos==='TW')txt+=`  Paraden: ${p.saves}  Gegentore: ${p.goals_conceded}  7m geh: ${p.penalties_saved}\n`;
+    txt+='\n';
+  });
+  txt+=`PROTOKOLL\n${'-'.repeat(30)}\n`;
+  S.log.forEach(e=>{txt+=`${e.time} (${e.half}.HZ) ${e.icon} ${e.text}\n`;});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([txt],{type:'text/plain'}));
+  a.download='handball_stats.txt';a.click();toast('📋 Export gespeichert');
+}
+
+function toast(msg){
+  const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');
+  clearTimeout(el._t);el._t=setTimeout(()=>el.classList.remove('show'),2500);
+}
+
+document.addEventListener('keydown',e=>{
+  if(e.target.tagName==='INPUT'||e.target.tagName==='SELECT')return;
+  if(e.key===' '){e.preventDefault();toggleTimer();}
+  if(e.key==='Escape'){closeStatModal();closeResetModal();}
+});
+document.getElementById('newName').addEventListener('keydown',e=>{if(e.key==='Enter')addPlayer();});
+
+load();
+</script>
+</body>
+</html>
