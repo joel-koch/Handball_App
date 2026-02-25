@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Handball Stats</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0d0f14;
+  --surface: #161921;
+  --surface2: #1e2230;
+  --border: #272d3d;
+  --accent: #00e5ff;
+  --accent2: #ff6b35;
+  --green: #00ff88;
+  --red: #ff3c5a;
+  --yellow: #ffd166;
+  --muted: #5a6480;
+  --text: #dde3f0;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'IBM Plex Sans', sans-serif;
+  min-height: 100vh;
+}
+header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 200;
+}
+.logo {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 26px;
+  letter-spacing: 4px;
+  color: var(--accent);
+}
+.header-right { display: flex; gap: 8px; align-items: center; }
+.scoreboard {
+  background: var(--surface);
+  margin: 14px 14px 0;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+.score-row {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  padding: 20px 24px 16px;
+  gap: 12px;
+}
+.score-side { text-align: center; }
+.team-input {
+  background: none;
+  border: none;
+  border-bottom: 2px solid var(--border);
+  color: var(--text);
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 20px;
+  letter-spacing: 2px;
+  text-align: center;
+  width: 100%;
+  padding: 3px 6px;
+  outline: none;
+  transition: border-color .2s;
+}
+.team-input:focus { border-color: var(--accent); }
+.score-num {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 86px;
+  line-height: 1;
+  margin: 6px 0;
+}
+.score-num.my { color: var(--accent); }
+.score-num.opp { color: var(--muted); }
+.score-sep {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 64px;
+  color: var(--border);
+  text-align: center;
+  line-height: 1;
+  padding-bottom: 16px;
+}
+.score-btns { display: flex; gap: 6px; justify-content: center; }
+.timer-bar {
+  border-top: 1px solid var(--border);
+  padding: 14px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  background: #11131c;
+}
+.timer-big {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 46px;
+  font-weight: 600;
+  color: var(--yellow);
+  letter-spacing: 2px;
+  min-width: 130px;
+  text-align: center;
+}
+.timer-big.ticking { animation: blink 1s ease-in-out infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.6} }
+.half-badge {
+  font-family: 'Bebas Neue', sans-serif;
+  letter-spacing: 2px;
+  font-size: 16px;
+  color: var(--muted);
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  padding: 4px 14px;
+  border-radius: 20px;
+}
+.btn {
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-weight: 700;
+  font-size: 12px;
+  padding: 8px 14px;
+  letter-spacing: .5px;
+  transition: all .12s;
+  white-space: nowrap;
+}
+.btn:active { transform: scale(.95); }
+.btn-cyan   { background: var(--accent); color: #000; }
+.btn-cyan:hover { filter: brightness(1.15); }
+.btn-ghost  { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+.btn-ghost:hover { background: var(--border); }
+.btn-green  { background: #0a3020; color: var(--green); border: 1px solid #1a5040; }
+.btn-green:hover { background: #1a5040; }
+.btn-red    { background: #2a0a10; color: var(--red); border: 1px solid #5a1a28; }
+.btn-red:hover { background: #4a1020; }
+.btn-yellow { background: #2a2010; color: var(--yellow); border: 1px solid #5a4820; }
+.btn-yellow:hover { background: #4a3818; }
+.btn-orange { background: var(--accent2); color: #fff; }
+.btn-orange:hover { filter: brightness(1.15); }
+.btn-sm { padding: 5px 10px; font-size: 11px; border-radius: 6px; }
+.btn-xs { padding: 3px 7px; font-size: 11px; border-radius: 5px; }
+.tabs {
+  display: flex;
+  margin: 14px 14px 0;
+  gap: 3px;
+  overflow-x: auto;
+  border-bottom: 2px solid var(--border);
+}
+.tab {
+  padding: 9px 16px;
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 1px;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  text-transform: uppercase;
+  white-space: nowrap;
+  transition: all .15s;
+}
+.tab:hover { color: var(--text); }
+.tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+.panel { display: none; padding: 14px; }
+.panel.active { display: block; }
+.sec-hdr { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.sec-title { font-family: 'Bebas Neue', sans-serif; font-size: 19px; letter-spacing: 2px; color: var(--muted); }
+.players-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 10px; }
+.player-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 14px;
+  position: relative;
+  transition: border-color .2s;
+}
+.player-card.on-field { border-color: var(--green); box-shadow: 0 0 0 1px rgba(0,255,136,.12), inset 0 0 20px rgba(0,255,136,.03); }
+.player-card.benched { opacity: .75; }
+.player-card.red-card { border-color: var(--red); opacity: .5; }
+.player-card.penalty-active { border-color: var(--yellow); }
+.card-top { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.num-badge {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 26px;
+  width: 42px; height: 42px;
+  border-radius: 8px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  color: var(--muted);
+}
+.player-card.on-field .num-badge { background: rgba(0,229,255,.08); color: var(--accent); border-color: rgba(0,229,255,.3); }
+.card-info { flex: 1; min-width: 0; }
+.card-name { font-weight: 700; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.card-sub { font-size: 11px; color: var(--muted); letter-spacing: 1px; display: flex; align-items: center; gap: 6px; }
+.on-field-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); display: inline-block; animation: dotPulse 1.4s ease-in-out infinite; }
+@keyframes dotPulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(.7)} }
+.card-del { position: absolute; top: 8px; right: 10px; background: none; border: none; color: var(--muted); cursor: pointer; font-size: 13px; padding: 2px 5px; border-radius: 4px; transition: all .15s; }
+.card-del:hover { color: var(--red); background: #2a0a10; }
+.stat-pills { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+.pill { background: var(--surface2); border: 1px solid var(--border); border-radius: 7px; padding: 5px 8px; display: flex; flex-direction: column; align-items: center; min-width: 48px; flex: 1; }
+.pill-val { font-family: 'IBM Plex Mono', monospace; font-size: 18px; font-weight: 600; line-height: 1.2; }
+.pill-val.c-time  { color: var(--accent); }
+.pill-val.c-goals { color: var(--green); }
+.pill-val.c-shots { color: var(--yellow); }
+.pill-val.c-saves { color: var(--accent2); }
+.pill-val.c-card  { color: var(--yellow); }
+.pill-val.c-red   { color: var(--red); }
+.pill-label { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; }
+.card-actions { display: flex; gap: 5px; flex-wrap: wrap; }
+.add-form { background: var(--surface); border: 1px dashed var(--border); border-radius: 12px; padding: 14px; margin-top: 12px; display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; }
+.field { display: flex; flex-direction: column; gap: 5px; }
+.field label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+.inp, .sel { background: var(--surface2); border: 1px solid var(--border); color: var(--text); font-family: 'IBM Plex Sans', sans-serif; font-size: 13px; padding: 7px 10px; border-radius: 7px; outline: none; transition: border-color .2s; }
+.inp:focus { border-color: var(--accent); }
+.lineup-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+.lineup-col { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+.lineup-col-hdr { padding: 10px 14px; font-family: 'Bebas Neue', sans-serif; letter-spacing: 2px; font-size: 16px; border-bottom: 1px solid var(--border); }
+.lineup-col-hdr.on { color: var(--green); background: rgba(0,255,136,.05); }
+.lineup-col-hdr.off { color: var(--muted); }
+.lineup-list { padding: 8px; display: flex; flex-direction: column; gap: 4px; }
+.lineup-row { display: flex; align-items: center; gap: 8px; padding: 7px 10px; border-radius: 8px; cursor: pointer; transition: background .15s; }
+.lineup-row:hover { background: var(--surface2); }
+.lineup-row .lnum { font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: var(--muted); min-width: 28px; }
+.lineup-row .lname { flex: 1; font-size: 13px; font-weight: 600; }
+.lineup-row .lpos { font-size: 10px; color: var(--muted); }
+.lineup-row .ltime { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--accent); }
+.lineup-row .lbtn { margin-left: auto; }
+.empty-lineup { padding: 20px; text-align: center; color: var(--muted); font-size: 12px; }
+.pen-section { background: var(--surface); border-radius: 12px; border: 1px solid var(--border); overflow: hidden; margin-bottom: 14px; }
+.pen-hdr { background: #251a08; padding: 10px 14px; font-family: 'Bebas Neue', sans-serif; letter-spacing: 2px; font-size: 17px; color: var(--yellow); display: flex; justify-content: space-between; align-items: center; }
+.pen-list { padding: 10px; display: flex; flex-direction: column; gap: 6px; }
+.pen-item { display: flex; align-items: center; gap: 10px; background: var(--surface2); border-radius: 8px; padding: 8px 12px; border: 1px solid var(--border); }
+.pen-name { flex: 1; font-size: 13px; font-weight: 600; }
+.pen-timer { font-family: 'IBM Plex Mono', monospace; font-size: 22px; font-weight: 600; color: var(--yellow); }
+.pen-timer.expiring { color: var(--red); animation: blink 1s ease-in-out infinite; }
+.events-wrap { background: var(--surface); border-radius: 12px; border: 1px solid var(--border); overflow: hidden; }
+.events-hdr { padding: 11px 14px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; font-family: 'Bebas Neue', sans-serif; letter-spacing: 2px; font-size: 17px; }
+.event-list { overflow-y: auto; max-height: 480px; }
+.ev { display: flex; align-items: center; gap: 10px; padding: 9px 14px; border-bottom: 1px solid var(--border); animation: slideIn .25s ease; }
+@keyframes slideIn { from{opacity:0;transform:translateX(-8px)} to{opacity:1;transform:none} }
+.ev:hover { background: var(--surface2); }
+.ev-time { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--muted); min-width: 48px; }
+.ev-icon { font-size: 16px; }
+.ev-desc { flex: 1; font-size: 13px; }
+.ev-undo { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 12px; padding: 2px 5px; border-radius: 4px; }
+.ev-undo:hover { color: var(--red); }
+.empty-state { padding: 36px; text-align: center; color: var(--muted); font-size: 13px; }
+.summary-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; margin-bottom: 18px; }
+.sum-box { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; text-align: center; }
+.sum-num { font-family: 'Bebas Neue', sans-serif; font-size: 44px; line-height: 1; margin-bottom: 4px; }
+.sum-lbl { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+.overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.85); z-index: 500; align-items: center; justify-content: center; }
+.overlay.open { display: flex; }
+.modal { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 22px; max-width: 400px; width: 92%; animation: popIn .18s ease; }
+@keyframes popIn { from{opacity:0;transform:scale(.92)} to{opacity:1;transform:none} }
+.modal h2 { font-family: 'Bebas Neue', sans-serif; font-size: 22px; letter-spacing: 2px; margin-bottom: 14px; color: var(--accent); }
+.modal-btns { display: flex; gap: 8px; justify-content: flex-end; margin-top: 14px; }
+.player-select-list { display: flex; flex-direction: column; gap: 6px; max-height: 320px; overflow-y: auto; }
+.psel-btn { display: flex; align-items: center; gap: 10px; background: var(--surface2); border: 1px solid var(--border); color: var(--text); border-radius: 8px; padding: 10px 12px; cursor: pointer; transition: all .15s; font-family: 'IBM Plex Sans', sans-serif; font-size: 13px; font-weight: 600; text-align: left; width: 100%; }
+.psel-btn:hover { border-color: var(--accent); background: rgba(0,229,255,.06); }
+.psel-num { font-family: 'IBM Plex Mono', monospace; color: var(--muted); min-width: 32px; }
+.toast { position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%) translateY(80px); background: var(--surface2); border: 1px solid var(--border); padding: 9px 20px; border-radius: 30px; font-size: 13px; transition: transform .28s; z-index: 999; white-space: nowrap; }
+.toast.show { transform: translateX(-50%) translateY(0); }
+@media(max-width:480px) {
+  .score-num { font-size: 64px; }
+  .timer-big { font-size: 34px; }
+  .lineup-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">🤾 HB STATS</div>
+  <div class="header-right">
+    <button class="btn btn-ghost btn-sm" onclick="exportStats()">📋 Export</button>
+    <button class="btn btn-red btn-sm" onclick="resetGame()">↺ Reset</button>
+  </div>
+</header>
+
+<div class="scoreboard">
+  <div class="score-row">
+    <div class="score-side">
+      <input class="team-input" id="myName" value="MEIN TEAM" maxlength="12" oninput="onNameChange()">
+      <div class="score-num my" id="myScore">0</div>
+      <div class="score-btns">
+        <button class="btn btn-cyan btn-sm" onclick="openGoalModal()">+ TOR</button>
+        <button class="btn btn-red btn-sm" onclick="removeGoal()">− TOR</button>
+      </div>
+    </div>
+    <div class="score-sep">:</div>
+    <div class="score-side">
+      <input class="team-input" id="oppName" value="GEGNER" maxlength="12" oninput="onNameChange()">
+      <div class="score-num opp" id="oppScore">0</div>
+      <div class="score-btns">
+        <button class="btn btn-ghost btn-sm" onclick="addOppGoal()">+ TOR</button>
+        <button class="btn btn-red btn-sm" onclick="removeOppGoal()">− TOR</button>
+      </div>
+    </div>
+  </div>
+  <div class="timer-bar">
+    <button class="btn btn-ghost btn-sm" onclick="setHalf(1)" id="h1btn">1. HZ</button>
+    <div class="timer-big" id="timerDisplay">00:00</div>
+    <button class="btn btn-ghost btn-sm" onclick="setHalf(2)" id="h2btn">2. HZ</button>
+    <div style="display:flex;gap:6px">
+      <button class="btn btn-green btn-sm" id="timerBtn" onclick="toggleTimer()">▶ START</button>
+      <button class="btn btn-ghost btn-sm" onclick="resetTimer()">↺</button>
+    </div>
+    <div class="half-badge" id="halfBadge">1. HALBZEIT</div>
+  </div>
+</div>
+
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('lineup',this)">📋 Aufstellung</button>
+  <button class="tab" onclick="switchTab('players',this)">👤 Spieler</button>
+  <button class="tab" onclick="switchTab('penalties',this)">⏱ Strafen</button>
+  <button class="tab" onclick="switchTab('events',this)">📜 Verlauf</button>
+  <button class="tab" onclick="switchTab('summary',this)">📊 Statistik</button>
+</div>
+
+<!-- LINEUP -->
+<div id="lineup" class="panel active">
+  <div class="lineup-grid">
+    <div class="lineup-col">
+      <div class="lineup-col-hdr on">⚡ AUF DEM FELD</div>
+      <div class="lineup-list" id="onFieldList"></div>
+    </div>
+    <div class="lineup-col">
+      <div class="lineup-col-hdr off">🪑 BANK</div>
+      <div class="lineup-list" id="benchList"></div>
+    </div>
+  </div>
+  <p style="font-size:11px;color:var(--muted);text-align:center">Namen anklicken zum Ein-/Auswechseln · Spielzeit läuft automatisch</p>
+</div>
+
+<!-- PLAYERS -->
+<div id="players" class="panel">
+  <div class="sec-hdr">
+    <div class="sec-title">SPIELER VERWALTEN</div>
+    <button class="btn btn-cyan btn-sm" onclick="showAddForm()">+ Spieler</button>
+  </div>
+  <div class="players-grid" id="playersGrid"></div>
+  <div class="add-form" id="addForm" style="display:none">
+    <div class="field">
+      <label>Nr.</label>
+      <input class="inp" id="newNum" type="number" min="1" max="99" placeholder="7" style="width:70px">
+    </div>
+    <div class="field">
+      <label>Name</label>
+      <input class="inp" id="newName" placeholder="Max Mustermann" style="width:180px">
+    </div>
+    <div class="field">
+      <label>Position</label>
+      <select class="sel" id="newPos">
+        <option value="Feld">Feldspieler</option>
+        <option value="TW">Torwart</option>
+        <option value="KR">Kreisläufer</option>
+        <option value="RL">Rückraum Li</option>
+        <option value="RM">Rückraum Mi</option>
+        <option value="RR">Rückraum Re</option>
+        <option value="LA">Linksaußen</option>
+        <option value="RA">Rechtsaußen</option>
+      </select>
+    </div>
+    <div style="display:flex;gap:6px;align-items:flex-end">
+      <button class="btn btn-cyan btn-sm" onclick="addPlayer()">Hinzufügen</button>
+      <button class="btn btn-ghost btn-sm" onclick="hideAddForm()">Abbrechen</button>
+    </div>
+  </div>
+</div>
+
+<!-- PENALTIES -->
+<div id="penalties" class="panel">
+  <div class="pen-section">
+    <div class="pen-hdr">⏱ AKTIVE STRAFZEITEN <span id="penCount" style="font-size:12px;font-family:'IBM Plex Sans',sans-serif;color:var(--muted)">0 aktiv</span></div>
+    <div class="pen-list" id="penList"><div class="empty-state">Keine aktiven Strafzeiten</div></div>
+  </div>
+  <p style="font-size:11px;color:var(--muted);text-align:center;margin-top:8px">Strafzeiten über die Spieler-Karten starten</p>
+</div>
+
+<!-- EVENTS -->
+<div id="events" class="panel">
+  <div class="events-wrap">
+    <div class="events-hdr">SPIELVERLAUF <button class="btn btn-ghost btn-sm" onclick="clearEvents()">Leeren</button></div>
+    <div class="event-list" id="eventList"><div class="empty-state">Noch keine Ereignisse</div></div>
+  </div>
+</div>
+
+<!-- SUMMARY -->
+<div id="summary" class="panel">
+  <div id="summaryContent"></div>
+</div>
+
+<!-- GOAL MODAL -->
+<div class="overlay" id="goalOverlay">
+  <div class="modal">
+    <h2>⚽ TOR — SCHÜTZE?</h2>
+    <div class="player-select-list" id="goalPlayerList"></div>
+    <div class="modal-btns">
+      <button class="btn btn-ghost" onclick="closeGoalModal()">Abbrechen</button>
+      <button class="btn btn-ghost" onclick="addGoalAnon()">Ohne Spieler</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let G = {
+  myScore: 0, oppScore: 0,
+  myName: 'MEIN TEAM', oppName: 'GEGNER',
+  players: [],
+  timer: { secs: 0, running: false, half: 1 },
+  events: [], penalties: [],
+};
+let timerIv = null;
+let nextId = 1;
+
+function save() { localStorage.setItem('hb_v3', JSON.stringify({ G, nextId })); }
+function load() {
+  try { const d = JSON.parse(localStorage.getItem('hb_v3')||'null'); if(d){G=d.G;nextId=d.nextId||1;} } catch(e){}
+  if(G.timer.running){G.timer.running=false;}
+  renderAll();
+}
+
+function renderAll() {
+  document.getElementById('myScore').textContent = G.myScore;
+  document.getElementById('oppScore').textContent = G.oppScore;
+  document.getElementById('myName').value = G.myName;
+  document.getElementById('oppName').value = G.oppName;
+  document.getElementById('halfBadge').textContent = G.timer.half + '. HALBZEIT';
+  document.getElementById('h1btn').style.color = G.timer.half===1 ? 'var(--accent)' : '';
+  document.getElementById('h2btn').style.color = G.timer.half===2 ? 'var(--accent)' : '';
+  updateTimerDisplay(); updateTimerBtn();
+  renderLineup(); renderPlayers(); renderEvents(); renderPenalties();
+}
+
+// ── LINEUP ──────────────────────────────────
+function renderLineup() {
+  const on  = G.players.filter(p=>p.onField).sort((a,b)=>a.num-b.num);
+  const off = G.players.filter(p=>!p.onField&&!p.redCard).sort((a,b)=>a.num-b.num);
+  document.getElementById('onFieldList').innerHTML = on.length ? on.map(p=>`
+    <div class="lineup-row" onclick="toggleField(${p.id})">
+      <span class="lnum">#${p.num}</span>
+      <span class="lname">${p.name}</span>
+      <span class="lpos">${p.pos}</span>
+      <span class="ltime">${fmtSecs(liveTime(p))}</span>
+      <button class="btn btn-red btn-xs lbtn" onclick="event.stopPropagation();toggleField(${p.id})">↓ AUS</button>
+    </div>`).join('') : '<div class="empty-lineup">Kein Spieler auf dem Feld</div>';
+  document.getElementById('benchList').innerHTML = off.length ? off.map(p=>`
+    <div class="lineup-row" onclick="toggleField(${p.id})">
+      <span class="lnum">#${p.num}</span>
+      <span class="lname">${p.name}</span>
+      <span class="lpos">${p.pos}</span>
+      <span class="ltime" style="color:var(--muted)">${fmtSecs(p.totalSecs)}</span>
+      <button class="btn btn-green btn-xs lbtn" onclick="event.stopPropagation();toggleField(${p.id})">↑ EIN</button>
+    </div>`).join('') : '<div class="empty-lineup">Alle Spieler im Einsatz</div>';
+}
+
+// ── PLAYERS ─────────────────────────────────
+function renderPlayers() {
+  const grid = document.getElementById('playersGrid');
+  if(!G.players.length){grid.innerHTML='<div class="empty-state" style="grid-column:1/-1">Noch keine Spieler. Klicke "+ Spieler".</div>';return;}
+  grid.innerHTML = G.players.map(p=>{
+    const cls = p.redCard?'red-card':p.onField?'on-field':'benched';
+    const hasPen = G.penalties.some(x=>x.playerId===p.id&&x.remaining>0);
+    const penCls = hasPen&&!p.redCard?'penalty-active':'';
+    const isTW = p.pos==='TW';
+    const statusText = p.redCard?'🔴 GESPERRT':p.onField?'<span class="on-field-dot"></span> AUF DEM FELD':'🪑 BANK';
+    return `
+    <div class="player-card ${cls} ${penCls}">
+      <button class="card-del" onclick="deletePlayer(${p.id})">✕</button>
+      <div class="card-top">
+        <div class="num-badge">${p.num}</div>
+        <div class="card-info">
+          <div class="card-name">${p.name}</div>
+          <div class="card-sub">${statusText} · ${p.pos}</div>
+        </div>
+      </div>
+      <div class="stat-pills">
+        <div class="pill"><span class="pill-val c-time">${fmtSecs(liveTime(p))}</span><span class="pill-label">Spielzeit</span></div>
+        ${isTW?`
+          <div class="pill"><span class="pill-val c-saves">${p.saves||0}</span><span class="pill-label">Paraden</span></div>
+          <div class="pill"><span class="pill-val c-red">${p.gegentore||0}</span><span class="pill-label">GT</span></div>
+        `:`
+          <div class="pill"><span class="pill-val c-goals">${p.goals||0}</span><span class="pill-label">Tore</span></div>
+          <div class="pill"><span class="pill-val c-shots">${p.shots||0}</span><span class="pill-label">Würfe</span></div>
+        `}
+        <div class="pill"><span class="pill-val c-card">${p.cards2min||0}</span><span class="pill-label">2 Min</span></div>
+        <div class="pill"><span class="pill-val c-red">${p.redCard?'✓':'—'}</span><span class="pill-label">Rot</span></div>
+      </div>
+      <div class="card-actions">
+        ${!p.redCard?`<button class="btn ${p.onField?'btn-red':'btn-green'} btn-sm" onclick="toggleField(${p.id})">${p.onField?'↓ Aus':'↑ Ein'}</button>`:''}
+        ${isTW?`
+          <button class="btn btn-orange btn-sm" onclick="addSave(${p.id})">🧤 Parade</button>
+          <button class="btn btn-red btn-sm" onclick="addGT(${p.id})">⚽ GT</button>
+        `:`
+          <button class="btn btn-cyan btn-sm" onclick="playerGoal(${p.id})">⚽ Tor</button>
+          <button class="btn btn-ghost btn-sm" onclick="addShot(${p.id})">🤾 Wurf</button>
+        `}
+        <button class="btn btn-yellow btn-sm" onclick="start2min(${p.id})">⏱ 2 Min</button>
+        ${!p.redCard?`<button class="btn btn-red btn-sm" onclick="giveRed(${p.id})">🔴 Rot</button>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── EVENTS ──────────────────────────────────
+function renderEvents() {
+  const list = document.getElementById('eventList');
+  if(!G.events.length){list.innerHTML='<div class="empty-state">Noch keine Ereignisse</div>';return;}
+  list.innerHTML = [...G.events].reverse().map((e,ri)=>{
+    const idx = G.events.length-1-ri;
+    return `<div class="ev"><span class="ev-time">${e.time}</span><span class="ev-icon">${e.icon}</span><span class="ev-desc">${e.desc}</span><button class="ev-undo" onclick="undoEvent(${idx})">✕</button></div>`;
+  }).join('');
+}
+
+// ── PENALTIES ───────────────────────────────
+function renderPenalties() {
+  const active = G.penalties.filter(p=>p.remaining>0);
+  document.getElementById('penCount').textContent = active.length+' aktiv';
+  const list = document.getElementById('penList');
+  if(!active.length){list.innerHTML='<div class="empty-state">Keine aktiven Strafzeiten</div>';return;}
+  list.innerHTML = active.map(pen=>{
+    const m=Math.floor(pen.remaining/60), s=(pen.remaining%60).toString().padStart(2,'0');
+    return `<div class="pen-item"><div class="pen-name">${pen.playerName}</div><div class="pen-timer ${pen.remaining<=30?'expiring':''}">${m}:${s}</div><button class="btn btn-ghost btn-sm" onclick="endPenalty(${pen.id})">✓ Ende</button></div>`;
+  }).join('');
+}
+
+// ── SUMMARY ─────────────────────────────────
+function renderSummary() {
+  const ps=G.players;
+  const tGoals=ps.reduce((s,p)=>s+(p.goals||0),0);
+  const tShots=ps.reduce((s,p)=>s+(p.shots||0),0);
+  const t2min=ps.reduce((s,p)=>s+(p.cards2min||0),0);
+  const tRed=ps.filter(p=>p.redCard).length;
+  const pct=tShots?Math.round(tGoals/tShots*100):0;
+  const tw=ps.find(p=>p.pos==='TW');
+  document.getElementById('summaryContent').innerHTML=`
+    <div class="summary-grid">
+      <div class="sum-box"><div class="sum-num" style="color:var(--accent)">${G.myScore}</div><div class="sum-lbl">Tore</div></div>
+      <div class="sum-box"><div class="sum-num" style="color:var(--muted)">${G.oppScore}</div><div class="sum-lbl">Gegentore</div></div>
+      <div class="sum-box"><div class="sum-num" style="color:var(--yellow)">${pct}%</div><div class="sum-lbl">Trefferquote</div></div>
+      <div class="sum-box"><div class="sum-num" style="color:var(--yellow)">${t2min}</div><div class="sum-lbl">2-Min</div></div>
+      <div class="sum-box"><div class="sum-num" style="color:var(--red)">${tRed}</div><div class="sum-lbl">Rote Karten</div></div>
+      ${tw?`<div class="sum-box"><div class="sum-num" style="color:var(--accent2)">${tw.saves||0}</div><div class="sum-lbl">Paraden</div></div>`:''}
+    </div>
+    <hr style="border:none;border-top:1px solid var(--border);margin:0 0 16px">
+    <div class="sec-title" style="margin-bottom:10px">SPIELER ÜBERSICHT</div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;overflow-x:auto">
+      <table style="width:100%;border-collapse:collapse;min-width:400px">
+        <thead><tr style="background:var(--surface2)">
+          <th style="padding:9px 12px;text-align:left;font-size:10px;color:var(--muted);letter-spacing:1px;text-transform:uppercase">Spieler</th>
+          <th style="padding:9px 8px;text-align:center;font-size:10px;color:var(--muted);letter-spacing:1px;text-transform:uppercase">⏱ Zeit</th>
+          <th style="padding:9px 8px;text-align:center;font-size:10px;color:var(--muted);letter-spacing:1px;text-transform:uppercase">⚽</th>
+          <th style="padding:9px 8px;text-align:center;font-size:10px;color:var(--muted);letter-spacing:1px;text-transform:uppercase">🤾</th>
+          <th style="padding:9px 8px;text-align:center;font-size:10px;color:var(--muted);letter-spacing:1px;text-transform:uppercase">2'</th>
+          <th style="padding:9px 8px;text-align:center;font-size:10px;color:var(--muted);letter-spacing:1px;text-transform:uppercase">🔴</th>
+        </tr></thead>
+        <tbody>${[...ps].sort((a,b)=>liveTime(b)-liveTime(a)).map((p,i)=>`
+          <tr style="border-top:1px solid var(--border);${i%2?'background:rgba(255,255,255,.01)':''}">
+            <td style="padding:9px 12px;font-weight:600;font-size:13px">
+              <span style="color:var(--muted);font-family:'IBM Plex Mono',monospace;font-size:11px;margin-right:6px">#${p.num}</span>${p.name}
+              <span style="font-size:10px;color:var(--muted);margin-left:4px">${p.pos}</span>
+              ${p.onField?'<span style="color:var(--green);font-size:10px;margin-left:4px">●</span>':''}
+            </td>
+            <td style="padding:9px 8px;text-align:center;font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--accent)">${fmtSecs(liveTime(p))}</td>
+            <td style="padding:9px 8px;text-align:center;font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--green)">${p.pos==='TW'?`<span style='color:var(--accent2)'>${p.saves||0}</span>`:p.goals||0}</td>
+            <td style="padding:9px 8px;text-align:center;font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--yellow)">${p.pos==='TW'?'—':p.shots||0}</td>
+            <td style="padding:9px 8px;text-align:center;font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--yellow)">${p.cards2min||0}</td>
+            <td style="padding:9px 8px;text-align:center;font-size:13px">${p.redCard?'🔴':'—'}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`;
+}
+
+// ═══════════════════════════════════════════
+//  TIMER
+// ═══════════════════════════════════════════
+function toggleTimer() {
+  if(G.timer.running){
+    clearInterval(timerIv);
+    G.timer.running=false;
+    G.players.forEach(p=>{if(p.onField){p.totalSecs=liveTime(p);p.fieldStartSec=G.timer.secs;}});
+  } else {
+    G.players.forEach(p=>{if(p.onField)p.fieldStartSec=G.timer.secs;});
+    timerIv=setInterval(tick,1000);
+    G.timer.running=true;
+  }
+  updateTimerBtn(); save();
+}
+
+function tick() {
+  G.timer.secs++;
+  updateTimerDisplay(); tickPenalties();
+  if(G.timer.secs%15===0){renderLineup();renderPlayers();}
+  if(G.timer.secs%60===0)save();
+}
+
+function resetTimer() {
+  clearInterval(timerIv); G.timer.running=false; G.timer.secs=0;
+  G.players.forEach(p=>{p.fieldStartSec=0;});
+  updateTimerDisplay(); updateTimerBtn(); save();
+}
+
+function setHalf(h) {
+  G.timer.half=h;
+  document.getElementById('halfBadge').textContent=h+'. HALBZEIT';
+  document.getElementById('h1btn').style.color=h===1?'var(--accent)':'';
+  document.getElementById('h2btn').style.color=h===2?'var(--accent)':'';
+  addEvent('⏸',h+'. Halbzeit'); save();
+}
+
+function updateTimerDisplay() {
+  const el=document.getElementById('timerDisplay');
+  el.textContent=fmtSecs(G.timer.secs);
+  el.className='timer-big'+(G.timer.running?' ticking':'');
+}
+function updateTimerBtn() {
+  const btn=document.getElementById('timerBtn');
+  btn.textContent=G.timer.running?'⏸ PAUSE':'▶ START';
+  btn.className=G.timer.running?'btn btn-red btn-sm':'btn btn-green btn-sm';
+}
+function getTimeStr(){return fmtSecs(G.timer.secs);}
+
+// ═══════════════════════════════════════════
+//  PLAYER TIME
+// ═══════════════════════════════════════════
+function liveTime(p) {
+  if(p.onField&&G.timer.running) return (p.totalSecs||0)+(G.timer.secs-(p.fieldStartSec||0));
+  return p.totalSecs||0;
+}
+function fmtSecs(s) {
+  s=Math.max(0,Math.round(s));
+  return Math.floor(s/60).toString().padStart(2,'0')+':'+(s%60).toString().padStart(2,'0');
+}
+
+// ═══════════════════════════════════════════
+//  TOGGLE FIELD
+// ═══════════════════════════════════════════
+function toggleField(id) {
+  const p=getPlayer(id); if(!p||p.redCard)return;
+  if(p.onField){
+    p.totalSecs=liveTime(p); p.onField=false;
+    addEvent('↓',`${p.name} ausgewechselt (${fmtSecs(p.totalSecs)})`);
+    toast(`↓ ${p.name} — Spielzeit: ${fmtSecs(p.totalSecs)}`);
+  } else {
+    p.onField=true; p.fieldStartSec=G.timer.secs;
+    addEvent('↑',`${p.name} eingewechselt`);
+    toast(`↑ ${p.name} auf dem Feld`);
+  }
+  renderLineup(); renderPlayers(); save();
+}
+
+// ═══════════════════════════════════════════
+//  GOALS
+// ═══════════════════════════════════════════
+function openGoalModal() {
+  const on=G.players.filter(p=>p.pos!=='TW'&&p.onField);
+  const off=G.players.filter(p=>p.pos!=='TW'&&!p.onField);
+  document.getElementById('goalPlayerList').innerHTML=`
+    ${on.length?'<div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">⚡ Auf dem Feld</div>':''}
+    ${on.map(p=>`<button class="psel-btn" onclick="addGoalPlayer(${p.id})"><span class="psel-num">#${p.num}</span>${p.name}<span style="margin-left:auto;color:var(--muted);font-size:11px">${p.goals||0} Tore</span></button>`).join('')}
+    ${off.length?'<div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:10px 0 6px">🪑 Bank</div>':''}
+    ${off.map(p=>`<button class="psel-btn" onclick="addGoalPlayer(${p.id})"><span class="psel-num">#${p.num}</span>${p.name}<span style="margin-left:auto;color:var(--muted);font-size:11px">${p.goals||0} Tore</span></button>`).join('')}
+    ${!on.length&&!off.length?'<div style="color:var(--muted);font-size:12px;text-align:center;padding:16px">Keine Feldspieler vorhanden</div>':''}`;
+  document.getElementById('goalOverlay').classList.add('open');
+}
+function closeGoalModal(){document.getElementById('goalOverlay').classList.remove('open');}
+function addGoalPlayer(id){
+  closeGoalModal();
+  const p=getPlayer(id); p.goals=(p.goals||0)+1; p.shots=(p.shots||0)+1; G.myScore++;
+  addEvent('⚽',`Tor: ${p.name} (#${p.num}) — ${G.myScore}:${G.oppScore}`);
+  updateScore(); renderPlayers(); toast(`⚽ ${p.name} — ${G.myScore}:${G.oppScore}`); save();
+}
+function addGoalAnon(){
+  closeGoalModal(); G.myScore++;
+  addEvent('⚽',`Tor — ${G.myScore}:${G.oppScore}`);
+  updateScore(); toast(`⚽ TOR! ${G.myScore}:${G.oppScore}`); save();
+}
+function removeGoal(){if(G.myScore>0){G.myScore--;updateScore();addEvent('↩','Tor zurückgenommen');save();}}
+function addOppGoal(){G.oppScore++;addEvent('🔴','Gegentor — '+G.myScore+':'+G.oppScore);updateScore();toast('Gegentor');save();}
+function removeOppGoal(){if(G.oppScore>0){G.oppScore--;updateScore();save();}}
+function updateScore(){document.getElementById('myScore').textContent=G.myScore;document.getElementById('oppScore').textContent=G.oppScore;}
+
+// ═══════════════════════════════════════════
+//  PLAYER ACTIONS
+// ═══════════════════════════════════════════
+function playerGoal(id){const p=getPlayer(id);p.goals=(p.goals||0)+1;p.shots=(p.shots||0)+1;G.myScore++;addEvent('⚽',`Tor: ${p.name} — ${G.myScore}:${G.oppScore}`);updateScore();renderPlayers();toast(`⚽ ${p.name}`);save();}
+function addShot(id){getPlayer(id).shots=(getPlayer(id).shots||0)+1;renderPlayers();save();}
+function addSave(id){const p=getPlayer(id);p.saves=(p.saves||0)+1;addEvent('🧤',`Parade: ${p.name}`);renderPlayers();toast(`🧤 ${p.name}`);save();}
+function addGT(id){getPlayer(id).gegentore=(getPlayer(id).gegentore||0)+1;renderPlayers();save();}
+function start2min(id){
+  const p=getPlayer(id); p.cards2min=(p.cards2min||0)+1;
+  G.penalties.push({id:Date.now(),playerId:id,playerName:p.name,remaining:120,startSec:G.timer.secs});
+  addEvent('⏱',`2 Min: ${p.name} (#${p.num})`);
+  renderPlayers();renderPenalties();toast(`⏱ 2 Min — ${p.name}`);save();
+}
+function giveRed(id){
+  const p=getPlayer(id); if(p.redCard)return;
+  p.redCard=true; if(p.onField){p.totalSecs=liveTime(p);p.onField=false;}
+  addEvent('🔴',`Rote Karte: ${p.name} (#${p.num})`);
+  renderLineup();renderPlayers();toast(`🔴 ${p.name}`);save();
+}
+function endPenalty(pid){G.penalties=G.penalties.filter(p=>p.id!==pid);renderPenalties();save();}
+function tickPenalties(){
+  let ch=false;
+  G.penalties.forEach(pen=>{
+    if(pen.remaining>0){
+      pen.remaining=Math.max(0,120-(G.timer.secs-pen.startSec));
+      if(pen.remaining===0&&!pen._done){pen._done=true;toast(`✅ Strafzeit: ${pen.playerName}`);ch=true;}
+    }
+  });
+  if(ch)renderPenalties();
+}
+
+// ═══════════════════════════════════════════
+//  ADD / DELETE PLAYER
+// ═══════════════════════════════════════════
+function showAddForm(){document.getElementById('addForm').style.display='flex';document.getElementById('newNum').focus();}
+function hideAddForm(){document.getElementById('addForm').style.display='none';}
+function addPlayer(){
+  const num=parseInt(document.getElementById('newNum').value);
+  const name=document.getElementById('newName').value.trim();
+  const pos=document.getElementById('newPos').value;
+  if(!num||!name){toast('Bitte Nummer und Name eingeben');return;}
+  G.players.push({id:nextId++,num,name,pos,onField:false,fieldStartSec:0,totalSecs:0,goals:0,shots:0,saves:0,gegentore:0,cards2min:0,redCard:false});
+  G.players.sort((a,b)=>a.num-b.num);
+  hideAddForm();
+  document.getElementById('newNum').value=''; document.getElementById('newName').value='';
+  renderLineup();renderPlayers();toast(`✅ ${name} hinzugefügt`);save();
+}
+function deletePlayer(id){
+  const p=getPlayer(id); if(!confirm(`${p.name} entfernen?`))return;
+  G.players=G.players.filter(x=>x.id!==id);
+  G.penalties=G.penalties.filter(x=>x.playerId!==id);
+  renderLineup();renderPlayers();save();
+}
+
+// ═══════════════════════════════════════════
+//  EVENTS
+// ═══════════════════════════════════════════
+function addEvent(icon,desc){G.events.push({time:getTimeStr(),icon,desc});renderEvents();}
+function undoEvent(i){G.events.splice(i,1);renderEvents();save();}
+function clearEvents(){if(confirm('Verlauf leeren?')){G.events=[];renderEvents();save();}}
+
+// ═══════════════════════════════════════════
+//  TABS
+// ═══════════════════════════════════════════
+function switchTab(id,btn){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById(id).classList.add('active'); btn.classList.add('active');
+  if(id==='summary')renderSummary();
+}
+
+// ═══════════════════════════════════════════
+//  RESET / EXPORT
+// ═══════════════════════════════════════════
+function resetGame(){
+  if(!confirm('Spiel zurücksetzen?\n(Spielerdaten bleiben, Statistiken werden gelöscht)'))return;
+  clearInterval(timerIv);
+  G.myScore=0;G.oppScore=0;G.timer={secs:0,running:false,half:1};G.events=[];G.penalties=[];
+  G.players.forEach(p=>Object.assign(p,{onField:false,fieldStartSec:0,totalSecs:0,goals:0,shots:0,saves:0,gegentore:0,cards2min:0,redCard:false}));
+  renderAll();save();toast('🔄 Spiel zurückgesetzt');
+}
+function exportStats(){
+  let txt=`HANDBALL — ${G.myName} vs ${G.oppName}\n${'='.repeat(50)}\n`;
+  txt+=`Ergebnis: ${G.myScore}:${G.oppScore}\n\n`;
+  txt+='SPIELER\n'+'-'.repeat(40)+'\n';
+  [...G.players].sort((a,b)=>a.num-b.num).forEach(p=>{
+    txt+=`#${p.num} ${p.name} (${p.pos})\n`;
+    txt+=`  Spielzeit: ${fmtSecs(liveTime(p))}`;
+    if(p.pos==='TW')txt+=`  Paraden: ${p.saves||0}  GT: ${p.gegentore||0}`;
+    else txt+=`  Tore: ${p.goals||0}  Würfe: ${p.shots||0}`;
+    txt+=`  2Min: ${p.cards2min||0}  Rot: ${p.redCard?'Ja':'Nein'}\n`;
+  });
+  txt+='\nVERLAUF\n'+'-'.repeat(40)+'\n';
+  G.events.forEach(e=>{txt+=`${e.time} ${e.icon} ${e.desc}\n`;});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([txt],{type:'text/plain'}));
+  a.download='handball_stats.txt'; a.click();
+  toast('📋 Exportiert');
+}
+
+// ═══════════════════════════════════════════
+//  UTILS
+// ═══════════════════════════════════════════
+function getPlayer(id){return G.players.find(p=>p.id===id);}
+function onNameChange(){G.myName=document.getElementById('myName').value;G.oppName=document.getElementById('oppName').value;save();}
+function toast(msg){
+  const el=document.getElementById('toast');el.textContent=msg;
+  el.classList.add('show');clearTimeout(el._t);
+  el._t=setTimeout(()=>el.classList.remove('show'),2400);
+}
+document.addEventListener('keydown',e=>{
+  if(e.target.tagName==='INPUT'||e.target.tagName==='SELECT')return;
+  if(e.key===' '){e.preventDefault();toggleTimer();}
+});
+document.getElementById('newName').addEventListener('keydown',e=>{if(e.key==='Enter')addPlayer();});
+document.getElementById('goalOverlay').addEventListener('click',e=>{if(e.target===document.getElementById('goalOverlay'))closeGoalModal();});
+
+load();
+</script>
+</body>
+</html>
